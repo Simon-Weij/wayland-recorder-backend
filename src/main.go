@@ -8,15 +8,22 @@ package main
 
 import (
 	"log"
-	"simon-weij/wayland-recorder-backend/src/router"
+
+	"simon-weij/wayland-recorder-backend/src/database"
+	"simon-weij/wayland-recorder-backend/src/router/auth"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/logger"
 )
 
 func main() {
 	app := fiber.New()
+	app.Use(logger.New())
 
-	app.Get("/", router.HelloWorld)
+	authGroup := app.Group("/auth")
+	authGroup.Post("/signup", auth.Signup)
+
+	database.InitialiseDatabase()
 
 	if err := app.Listen(":3000"); err != nil {
 		log.Fatalf("Error starting server: %v", err)
