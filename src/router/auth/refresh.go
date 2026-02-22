@@ -39,7 +39,7 @@ func RefreshToken(ctx fiber.Ctx) error {
 	}
 
 	// Generates token
-	accessToken, err := database.GenerateToken(userID)
+	accessToken, err := GenerateToken(userID)
 	if err != nil {
 		log.Warn(fmt.Sprintf("Couldn't generate token for %v", userID))
 		return fiber.ErrInternalServerError

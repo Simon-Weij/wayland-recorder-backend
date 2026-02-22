@@ -48,7 +48,7 @@ func Login(ctx fiber.Ctx) error {
 	}
 
 	// Generate JWT
-	token, err := database.GenerateToken(user.ID)
+	token, err := GenerateToken(user.ID)
 	if err != nil {
 		log.Warn(fmt.Sprintf("Couldn't generate token for %v", user.ID))
 		return fiber.ErrInternalServerError
