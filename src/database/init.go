@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 )
 
@@ -68,6 +69,18 @@ func setupUsersTable() {
 		username VARCHAR(50) UNIQUE NOT NULL,
 		password_hash TEXT NOT NULL,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+	);
+	`)
+}
+
+func setupVideosTable() {
+	database.Query(`
+	CREATE TABLE IF NOT EXISTS videos (
+		id SERIAL PRIMARY KEY,
+		owner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		title VARCHAR(255) NOT NULL,
+		video_hash VARCHAR(255) NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);
 	`)
 }
