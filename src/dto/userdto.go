@@ -12,3 +12,13 @@ type User struct {
 	Username string `db:"username"`
 	Password string `db:"password_hash"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type UserAuth struct {
+	ID           int
+	PasswordHash string
+}

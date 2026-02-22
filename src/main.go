@@ -10,6 +10,7 @@ import (
 	"log"
 
 	"simon-weij/wayland-recorder-backend/src/database"
+	"simon-weij/wayland-recorder-backend/src/router"
 	"simon-weij/wayland-recorder-backend/src/router/auth"
 
 	"github.com/gofiber/fiber/v3"
@@ -20,8 +21,12 @@ func main() {
 	app := fiber.New()
 	app.Use(logger.New())
 
+	app.Get("/", auth.Middleware, router.HelloWorld)
+
 	authGroup := app.Group("/auth")
 	authGroup.Post("/signup", auth.Signup)
+	authGroup.Post("/login", auth.Login)
+	authGroup.Post("/refresh", auth.RefreshToken)
 
 	database.InitialiseDatabase()
 

@@ -2,7 +2,10 @@ module simon-weij/wayland-recorder-backend
 
 go 1.25.5
 
-require github.com/gofiber/fiber/v3 v3.0.0
+require (
+	github.com/gofiber/fiber/v3 v3.0.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
+)
 
 require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -25,7 +28,7 @@ require (
 	github.com/tinylib/msgp v1.6.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.69.0 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/crypto v0.47.0
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect

@@ -20,10 +20,12 @@ import (
 func Signup(ctx fiber.Ctx) error {
 	var dto dto.User
 
+	// Validate JSON structure
 	if err := ctx.Bind().Body(&dto); err != nil {
 		return fiber.ErrBadRequest
 	}
 
+	// Check if email and username already exists
 	if err := checkForConflicts("email", dto.Email); err != nil {
 		return err
 	}
@@ -31,14 +33,15 @@ func Signup(ctx fiber.Ctx) error {
 		return err
 	}
 
+	// Hash password
 	hash, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	dto.Password = string(hash)
-
 	if err != nil {
 		log.Warn("Couldn't hash the password!")
 		return fiber.NewError(fiber.ErrInternalServerError.Code, "couldn't hash password")
 	}
 
+	// Insert user into database
 	database.InsertUserIntoDatabase(dto)
 
 	return nil
