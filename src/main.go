@@ -32,7 +32,7 @@ func main() {
 	authGroup.Post("/refresh", auth.RefreshToken)
 
 	videosGroup := app.Group("/videos")
-	videosGroup.Post("/upload", videos.UploadVideo)
+	videosGroup.Post("/upload", auth.Middleware, videos.UploadVideo)
 
 	database.InitialiseDatabase()
 

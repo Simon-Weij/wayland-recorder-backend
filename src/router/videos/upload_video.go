@@ -1,11 +1,19 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 package videos
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"simon-weij/wayland-recorder-backend/src/database"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
@@ -19,6 +27,11 @@ func UploadVideo(ctx fiber.Ctx) error {
 	if err != nil {
 		log.Error("upload FormFile:", err)
 		return fiber.ErrInternalServerError
+	}
+
+	title := ctx.FormValue("title")
+	if title == "" {
+		return fiber.ErrBadRequest
 	}
 
 	// Open file
@@ -51,6 +64,16 @@ func UploadVideo(ctx fiber.Ctx) error {
 		log.Error("upload save:", err)
 		return fiber.ErrInternalServerError
 	}
+
+	// Get user id
+	userID := ctx.Locals("userID")
+	uid, ok := userID.(int)
+	if !ok {
+		log.Error(fmt.Sprintf("Couldn't get user id for %v", userID))
+		return fiber.ErrInternalServerError
+	}
+
+	database.InsertVideo(uid, title, hashSum)
 
 	return ctx.SendString("File uploaded successfully")
 }
