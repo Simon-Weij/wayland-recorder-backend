@@ -52,5 +52,5 @@ func UploadVideo(ctx fiber.Ctx) error {
 		return fiber.ErrInternalServerError
 	}
 
-	return ctx.SendString("File uploaded successfully: " + fullLocation)
+	return ctx.SendString("File uploaded successfully")
 }
