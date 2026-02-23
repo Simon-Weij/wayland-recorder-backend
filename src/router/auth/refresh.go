@@ -17,39 +17,19 @@ import (
 
 // /auth/refresh
 func RefreshToken(ctx fiber.Ctx) error {
-	// Define struct
-	var body struct {
-		RefreshToken string `json:"refresh_token"`
+	refreshToken, err := parseRefreshRequest(ctx)
+	if err != nil {
+		return err
 	}
 
-	// Check if the expected format is matched
-	if err := ctx.Bind().Body(&body); err != nil {
-		return fiber.ErrBadRequest
-	}
-
-	// Checks if a refresh token was provided
-	if body.RefreshToken == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "refresh_token is required")
-	}
-
-	// Gets user id
-	userID, err := database.GetUserIDFromRefreshToken(body.RefreshToken)
+	userID, err := database.GetUserIDFromRefreshToken(refreshToken)
 	if err != nil {
 		return fiber.ErrUnauthorized
 	}
 
-	// Generates token
-	accessToken, err := GenerateToken(userID)
+	accessToken, newRefreshToken, err := rotateTokens(userID)
 	if err != nil {
-		log.Warn(fmt.Sprintf("Couldn't generate token for %v", userID))
-		return fiber.ErrInternalServerError
-	}
-
-	// Generates new refresh token
-	newRefreshToken, err := database.CreateRefreshToken(userID, 7*24*time.Hour)
-	if err != nil {
-		log.Warn(fmt.Sprintf("Couldn't generate refreshtoken for %v", userID))
-		return fiber.ErrInternalServerError
+		return err
 	}
 
 	// Returns tokens
@@ -57,4 +37,41 @@ func RefreshToken(ctx fiber.Ctx) error {
 		"access_token":  accessToken,
 		"refresh_token": newRefreshToken,
 	})
+}
+
+func parseRefreshRequest(ctx fiber.Ctx) (string, error) {
+	// Define struct
+	var body struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	// Check if the expected format is matched
+	if err := ctx.Bind().Body(&body); err != nil {
+		return "", fiber.ErrBadRequest
+	}
+
+	// Checks if a refresh token was provided
+	if body.RefreshToken == "" {
+		return "", fiber.NewError(fiber.StatusBadRequest, "refresh_token is required")
+	}
+
+	return body.RefreshToken, nil
+}
+
+func rotateTokens(userID int) (string, string, error) {
+	// Generates token
+	accessToken, err := GenerateToken(userID)
+	if err != nil {
+		log.Warn(fmt.Sprintf("Couldn't generate token for %v", userID))
+		return "", "", fiber.ErrInternalServerError
+	}
+
+	// Generates new refresh token
+	newRefreshToken, err := database.CreateRefreshToken(userID, 7*24*time.Hour)
+	if err != nil {
+		log.Warn(fmt.Sprintf("Couldn't generate refreshtoken for %v", userID))
+		return "", "", fiber.ErrInternalServerError
+	}
+
+	return accessToken, newRefreshToken, nil
 }

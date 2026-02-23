@@ -1,9 +1,3 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
 package auth
 
 import (
@@ -18,30 +12,46 @@ import (
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func Middleware(ctx fiber.Ctx) error {
+	tokenString, err := extractToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	token, err := parseToken(tokenString)
+	if err != nil {
+		return fiber.ErrUnauthorized
+	}
+
+	return validateClaims(ctx, token)
+}
+
+func extractToken(ctx fiber.Ctx) (string, error) {
 	authHeader := ctx.Get("Authorization")
 
 	// Checks if header exists
 	if authHeader == "" {
-		return fiber.ErrUnauthorized
+		return "", fiber.ErrUnauthorized
 	}
 
 	// Checks if header matches
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 	if tokenString == authHeader {
-		return fiber.ErrUnauthorized
+		return "", fiber.ErrUnauthorized
 	}
+	return tokenString, nil
+}
 
+func parseToken(tokenString string) (*jwt.Token, error) {
 	// Verifies jwt token
-	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+	return jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fiber.ErrUnauthorized
 		}
 		return jwtSecret, nil
 	})
-	if err != nil {
-		return fiber.ErrUnauthorized
-	}
+}
 
+func validateClaims(ctx fiber.Ctx, token *jwt.Token) error {
 	// Checks if token is expired
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		if exp, ok := claims["exp"].(float64); ok {
@@ -51,18 +61,22 @@ func Middleware(ctx fiber.Ctx) error {
 		}
 
 		ctx.Locals("userID", claims["sub"])
+		return ctx.Next()
 	}
 
-	return ctx.Next()
+	return fiber.ErrUnauthorized
 }
 
 func GenerateToken(userID int) (string, error) {
-	claims := jwt.MapClaims{
+	claims := createClaims(userID)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtSecret)
+}
+
+func createClaims(userID int) jwt.MapClaims {
+	return jwt.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(5 * time.Minute).Unix(),
 		"iat": time.Now().Unix(),
 	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
 }

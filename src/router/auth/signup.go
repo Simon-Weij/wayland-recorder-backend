@@ -18,32 +18,55 @@ import (
 
 // /auth/signup
 func Signup(ctx fiber.Ctx) error {
-	var dto dto.User
+	userDto, err := parseAndValidateSignup(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := checkUserConflicts(userDto); err != nil {
+		return err
+	}
+
+	if err := processAndStoreUser(userDto); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func parseAndValidateSignup(ctx fiber.Ctx) (*dto.User, error) {
+	var userDto dto.User
 
 	// Validate JSON structure
-	if err := ctx.Bind().Body(&dto); err != nil {
-		return fiber.ErrBadRequest
+	if err := ctx.Bind().Body(&userDto); err != nil {
+		return nil, fiber.ErrBadRequest
 	}
 
+	return &userDto, nil
+}
+
+func checkUserConflicts(userDto *dto.User) error {
 	// Check if email and username already exists
-	if err := checkForConflicts("email", dto.Email); err != nil {
+	if err := checkForConflicts("email", userDto.Email); err != nil {
 		return err
 	}
-	if err := checkForConflicts("username", dto.Username); err != nil {
+	if err := checkForConflicts("username", userDto.Username); err != nil {
 		return err
 	}
+	return nil
+}
 
+func processAndStoreUser(userDto *dto.User) error {
 	// Hash password
-	hash, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
-	dto.Password = string(hash)
+	hash, err := bcrypt.GenerateFromPassword([]byte(userDto.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Warn("Couldn't hash the password!")
 		return fiber.NewError(fiber.ErrInternalServerError.Code, "couldn't hash password")
 	}
+	userDto.Password = string(hash)
 
 	// Insert user into database
-	database.InsertUserIntoDatabase(dto)
-
+	database.InsertUserIntoDatabase(*userDto)
 	return nil
 }
 
