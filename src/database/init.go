@@ -92,6 +92,7 @@ func setupVideosTable() {
 		owner_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 		title VARCHAR(255) NOT NULL,
 		video_hash VARCHAR(255) NOT NULL,
+		is_private BOOLEAN NOT NULL DEFAULT FALSE,
 		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);
 	`)

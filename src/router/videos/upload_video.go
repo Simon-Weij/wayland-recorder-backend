@@ -33,15 +33,28 @@ import (
 )
 
 func UploadVideo(ctx fiber.Ctx) error {
+	var req struct {
+		Title     string `form:"title"`
+		IsPrivate *bool  `form:"is_private"`
+	}
+
+	if err := ctx.Bind().Body(&req); err != nil {
+		return fiber.ErrBadRequest
+	}
+
+	if req.Title == "" {
+		return fiber.ErrBadRequest
+	}
+
+	isPrivate := true
+	if req.IsPrivate != nil {
+		isPrivate = *req.IsPrivate
+	}
+
 	fileHeader, err := ctx.FormFile("file")
 	if err != nil {
 		log.Error("upload FormFile:", err)
 		return fiber.ErrInternalServerError
-	}
-
-	title := ctx.FormValue("title")
-	if title == "" {
-		return fiber.ErrBadRequest
 	}
 
 	hashSum, err := calculateHash(fileHeader)
@@ -60,7 +73,7 @@ func UploadVideo(ctx fiber.Ctx) error {
 		return err
 	}
 
-	database.InsertVideo(uid, title, hashSum)
+	database.InsertVideo(uid, req.Title, hashSum, isPrivate)
 
 	return ctx.SendString("File uploaded successfully")
 }

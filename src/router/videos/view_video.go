@@ -16,17 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package database
+package videos
 
-func InsertVideo(ownerID int, title, videoHash string, isPrivate bool) (int, error) {
-	var id int
-	err := database.QueryRow(`
-		INSERT INTO videos (owner_id, title, video_hash, is_private)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id
-	`, ownerID, title, videoHash, isPrivate).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+func serveVideoById() {
+
 }
