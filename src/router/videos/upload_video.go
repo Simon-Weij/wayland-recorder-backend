@@ -21,12 +21,12 @@ package videos
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 	"simon-weij/wayland-recorder-backend/src/database"
+	"simon-weij/wayland-recorder-backend/src/router/auth"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/log"
@@ -38,7 +38,7 @@ func UploadVideo(ctx fiber.Ctx) error {
 		IsPrivate *bool  `form:"is_private"`
 	}
 
-	if err := ctx.Bind().Body(&req); err != nil {
+	if err := ctx.Bind().Form(&req); err != nil {
 		return fiber.ErrBadRequest
 	}
 
@@ -62,18 +62,20 @@ func UploadVideo(ctx fiber.Ctx) error {
 		return err
 	}
 
-	fullLocation := getStoragePath(hashSum, filepath.Ext(fileHeader.Filename))
+	extension := filepath.Ext(fileHeader.Filename)
+
+	fullLocation := getStoragePath(hashSum, extension)
 
 	if err := saveToDisk(ctx, fileHeader, fullLocation); err != nil {
 		return err
 	}
 
-	uid, err := getUID(ctx)
+	uid, err := auth.GetUID(ctx)
 	if err != nil {
 		return err
 	}
 
-	database.InsertVideo(uid, req.Title, hashSum, isPrivate)
+	database.InsertVideo(uid, req.Title, hashSum, extension, isPrivate)
 
 	return ctx.SendString("File uploaded successfully")
 }
@@ -110,14 +112,4 @@ func saveToDisk(ctx fiber.Ctx, fileHeader *multipart.FileHeader, fullLocation st
 		return fiber.ErrInternalServerError
 	}
 	return nil
-}
-
-func getUID(ctx fiber.Ctx) (int, error) {
-	userID := ctx.Locals("userID")
-	uid, ok := userID.(int)
-	if !ok {
-		log.Error(fmt.Sprintf("Couldn't get user id for %v", userID))
-		return 0, fiber.ErrInternalServerError
-	}
-	return uid, nil
 }

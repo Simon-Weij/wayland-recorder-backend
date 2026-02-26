@@ -45,6 +45,7 @@ func main() {
 
 	videosGroup := app.Group("/videos")
 	videosGroup.Post("/upload", auth.Middleware, videos.UploadVideo)
+	videosGroup.Get("/get/:id", auth.Middleware, videos.ServeVideoById)
 
 	database.InitialiseDatabase()
 

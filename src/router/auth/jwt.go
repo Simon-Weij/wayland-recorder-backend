@@ -19,11 +19,13 @@
 package auth
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
@@ -96,5 +98,19 @@ func createClaims(userID int) jwt.MapClaims {
 		"sub": userID,
 		"exp": time.Now().Add(5 * time.Minute).Unix(),
 		"iat": time.Now().Unix(),
+	}
+}
+
+func GetUID(ctx fiber.Ctx) (int, error) {
+	userID := ctx.Locals("userID")
+
+	switch v := userID.(type) {
+	case float64:
+		return int(v), nil
+	case int:
+		return v, nil
+	default:
+		log.Error(fmt.Sprintf("Couldn't get user id for %v", userID))
+		return 0, fiber.ErrInternalServerError
 	}
 }
